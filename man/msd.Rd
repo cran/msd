@@ -4,7 +4,7 @@
 Method of Successive Dichotomizations
 }
 \description{
-Estimates item measures, person measures, rating category thresholds and their standard errors using the Method of Successive Dichotomizations.  Option provided for anchoring certain items and persons while estimating the rest.  Option also provided for estimating infit and outfit statistics.
+Estimates item measures, person measures, rating category thresholds and their standard errors using the method of successive dichotomizations.  Option provided for anchoring certain items and persons while estimating the rest.  Option also provided for estimating infit and outfit statistics.
 }
 \usage{
 msd(data, items = NULL, persons = NULL, misfit = FALSE)
@@ -41,18 +41,40 @@ Chris Bradley (cbradley05@gmail.com)
 }
 \note{
 The axis origin is set by convention at the mean item measure.  All item measures and person measures that cannot be estimated will return as NA (e.g., if a person responds with a single rating category to all items, that person's person measure cannot be estimated).
+
+The accuracy of \code{msd} can be tested using the \code{simdata} function (see Examples).
+}
+\seealso{
+\code{\link{simdata}}
 }
 \examples{
-# Using a randomly generated ratings matrix
+# Simple example using a randomly generated ratings matrix
 d <- as.numeric(sample(0:5, 1000, replace = TRUE))
-m <- matrix(d, nrow = 50, ncol = 20)
-z1 <- msd(m, misfit = TRUE)
+dm <- matrix(d, nrow = 50, ncol = 20)
+m1 <- msd(dm, misfit = TRUE)
 
 # Anchor first 10 item measures and first 10 person measures
-im <- z1$item_measures
+im <- m1$item_measures
 im[11:length(im)] <- NA
-pm <- z1$person_measures
+pm <- m1$person_measures
 pm[11:length(pm)] <- NA
-z2 <- msd(m, items = im, persons = pm, misfit = TRUE)
+m2 <- msd(dm, items = im, persons = pm, misfit = TRUE)
+
+# To test the accuracy of msd using simdata, set the mean item measure to zero
+# (axis origin in msd is the mean item measure) and the mean threshold to
+# zero (any non-zero mean threshold is reflected in the person measures).
+im = runif(100, -2, 2)
+im = im - mean(im)
+pm = runif(200, -2, 2)
+th = sort(runif(5, -2, 2))
+th = th - mean(th)
+d = simdata(im, pm, th, missingProb = 0.15, minRating = 0)
+m = msd(d)
+
+# Compare msd parameters to true values.  Linear regression should
+# yield a slope very close to 1 and an intercept very close to 0.
+lm(m$item_measures ~ im)
+lm(m$person_measures ~ pm)
+lm(m$thresholds ~ th)
 }
 \keyword{ models }% use one of  RShowDoc("KEYWORDS")

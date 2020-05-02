@@ -37,8 +37,8 @@ Chris Bradley (cbradley05@gmail.com)
 # Using randomly generated values
 d <- as.numeric(sample(0:5, 1000, replace = TRUE))
 m <- matrix(d, nrow = 50, ncol = 20)
-im <- runif(20, -0.5, 0.5)
-pm <- runif(50, -0.5, 0.5)
+im <- runif(20, -2, 2)
+pm <- runif(50, -2, 2)
 th1 <- thresh(m, items = im, persons = pm)
 
 # Anchor first 10 item measures and first 10 person measures

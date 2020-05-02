@@ -14,6 +14,10 @@
 # msdprob <- calculates rating category probabilities
 # expdata <- generates expected ratings for each person/item combination
 # misfit <- calculates misfit statistics (infit and outfit)
+# simdata <- generates simulated rating scale data
+
+# LIBRARIES
+library(stats)
 
 ##########################################################################
 
@@ -36,7 +40,7 @@ msd <- function(data, items = NULL, persons = NULL, misfit = FALSE){
   # 'items' = a numeric vector of anchored item measures. Item measures
   #           to be estimated are set to NA. The length of 'items' must
   #           equal the number of columns in 'data'. Default is NULL.
-  # 'persons' = a numeric vector of anchored personm measures. Person
+  # 'persons' = a numeric vector of anchored person measures. Person
   #             measures to be estimated are set to NA. The length of
   #             'persons' must equal the number of rows in 'data'.
   #             Default is NULL.
@@ -593,7 +597,7 @@ thresh <- function(data, items, persons){
 
 
 # Estimate MSD person measures given population thresholds
-pms <- function(data, items, thresholds, misfit = FALSE){
+pms <- function(data, items, thresholds, misfit = FALSE, minRating = NULL){
   # Estimates person measures assuming all persons use the same rating
   # category thresholds.
 
@@ -601,7 +605,10 @@ pms <- function(data, items, thresholds, misfit = FALSE){
   # 'data' = a numeric matrix of ordinal rating scale data whose entries
   #          are integers with missing data set to NA. Rows are persons
   #          and columns are items. The ordinal rating scale is assumed
-  #          to go from the smallest to largest integer in integer steps.
+  #          to go from the smallest to largest integer in integer steps
+  #          unless minRating is specified in which case the ordinal
+  #          rating scale goes from minRating to the largest integer in
+  #          integer steps.
   # 'items' = a numeric vector of item measures with missing values set
   #           to NA.
   # 'thresholds' = a numeric vector of ordered rating category thresholds
@@ -610,6 +617,8 @@ pms <- function(data, items, thresholds, misfit = FALSE){
   # OPTIONAL INPUTS
   # 'misfit' = logical for calculating infit and outfit statistics.
   #            Default is FALSE.
+  # 'minRating' = integer representing the smallest ordinal rating
+  #               category. Default is NULL.
 
 
   # CHECK FOR MISSING REQUIRED INPUTS ------------------------------------
@@ -641,6 +650,16 @@ pms <- function(data, items, thresholds, misfit = FALSE){
   if (!is.logical(misfit)){
     stop('Argument "misfit" must be a logical TRUE or FALSE')
   }
+  if (!is.null(minRating) && length(minRating) != 1){
+    stop('Argument "minRating" must be an integer')
+  }
+  if (!is.null(minRating) && minRating%%1 != 0){
+    stop('Argument "minRating" must be an integer')
+  }
+  if (length(minRating) == 1 && typeof(minRating) == "integer"){
+    minRating = as.numeric(minRating)
+  }
+
 
   # CHECK VALUES AND DIMENSIONS ------------------------------------------
 
@@ -662,17 +681,29 @@ pms <- function(data, items, thresholds, misfit = FALSE){
   # Check if there are any NA in thresholds and if thresholds is ordered
   if (any(is.na(thresholds)) ||
       identical(order(thresholds),
-      seq(1, length(thresholds))) == FALSE){
+                seq(1, length(thresholds))) == FALSE){
     stop('Argument "thresholds" must be an ordered vector of real numbers
          with no NA')
   }
 
-  # Check if the length of thresholds equals the maximum minus minimum
-  # rating category in data
-  if (max(data, na.rm = TRUE) - min(data, na.rm = TRUE) !=
-      length(thresholds)){
-    stop('The length of "thresholds" must equal the maximum minus the
-         minimum rating category in data')
+  # Check if the length of thresholds equals the maximum observed rating
+  # in 'data' minus 0 if 'minRating' is not specified
+  if (is.null(minRating) &&
+      max(data, na.rm = TRUE) - min(data, na.rm = TRUE)
+      != length(thresholds)){
+    stop('The length of "thresholds" must equal the maximum minus
+          minimum rating in "data" unless "minRating" is specified')
+  }
+  # Check if the maximum observed rating is too large given 'minRating'
+  if (!is.null(minRating) &&
+      max(data, na.rm = TRUE) - minRating > length(thresholds)){
+    stop('The maximum rating in "data" cannot be larger than "minRating"
+          plus the length of "thresholds"')
+  }
+  # Check if 'minRating' is too large
+  if (!is.null(minRating) && minRating > min(data, na.rm = TRUE)){
+    stop('"minRating" cannot be larger than the smallest integer in
+         "data"')
   }
 
 
@@ -681,8 +712,12 @@ pms <- function(data, items, thresholds, misfit = FALSE){
   # Maximum absolute value person measure
   maxLogit = 10
 
-  # Make lowest rating zero
-  rdata = data - min(data, na.rm = TRUE)
+  # Define lowest rating to be zero
+  if (is.null(minRating)){
+    rdata = data - min(data, na.rm = TRUE)
+  } else {
+    rdata = data - minRating
+  }
 
   # Create MSD probability lookup table
   inc = 0.001; gamma = seq(-2.2*maxLogit,2.2*maxLogit,inc)
@@ -706,8 +741,8 @@ pms <- function(data, items, thresholds, misfit = FALSE){
 
     # Minimize negative of likelihood function with x as person measure
     f <- function(x) -sum(log(GM[R+1
-                    + nrow(GM)*(round((2.2*maxLogit)*(1/inc)+1) +
-                    round((x-IP)*(1/inc))-1)]))
+                          + nrow(GM)*(round((2.2*maxLogit)*(1/inc)+1) +
+                          round((x-IP)*(1/inc))-1)]))
 
     # Estimate person measure
     P_opt = optim(0, f, method = "Brent" , lower = -1.1*maxLogit,
@@ -725,7 +760,11 @@ pms <- function(data, items, thresholds, misfit = FALSE){
   # MISFIT STATISTICS --------------------------------------------------
 
   if (misfit == TRUE){
-    MSF = misfit(rdata, items, PM, thresholds)
+    if (is.null(minRating)){
+      MSF = misfit(rdata, items, PM, thresholds)
+    } else {
+      MSF = misfit(rdata + minRating, items, PM, thresholds, minRating)
+    }
   }
 
   # OUTPUT -------------------------------------------------------------
@@ -885,20 +924,27 @@ expdata <- function(items, persons, thresholds, minRating){
 
 
 # Misfit statistics (infit and outfit)
-misfit <- function(data, items, persons, thresholds){
+misfit <- function(data, items, persons, thresholds, minRating = NULL){
   # Calculates infit and outfit for items and persons.
 
   # REQUIRED INPUTS
   # 'data' = a numeric matrix of ordinal rating scale data whose entries
   #          are integers with missing data set to NA. Rows are persons
   #          and columns are items. The ordinal rating scale is assumed
-  #          to go from the smallest to largest integer in integer steps.
+  #          to go from the smallest to largest integer in integer steps
+  #          unless minRating is specified in which case the ordinal
+  #          rating scale goes from minRating to the largest integer in
+  #          integer steps.
   # 'items' = a numeric vector of item measures with missing values set
   #           to NA.
   # 'persons' = a numeric vector of person measures with missing values
   #             set to NA.
   # 'thresholds' = a numeric vector of ordered rating category thresholds
   #                with no NA.
+
+  # OPTIONAL INPUTS
+  # 'minRating' = integer representing the smallest ordinal rating
+  #               category. Default is NULL.
 
   # CHECK FOR MISSING REQUIRED INPUTS ------------------------------------
 
@@ -932,6 +978,15 @@ misfit <- function(data, items, persons, thresholds){
   if (!is.vector(thresholds) || typeof(thresholds) != "double"){
     stop('Input "thresholds" must be a vector of mode numeric with no NA')
   }
+  if (!is.null(minRating) && length(minRating) != 1){
+    stop('Argument "minRating" must be an integer')
+  }
+  if (!is.null(minRating) && minRating%%1 != 0){
+    stop('Argument "minRating" must be an integer')
+  }
+  if (length(minRating) == 1 && typeof(minRating) == "integer"){
+    minRating = as.numeric(minRating)
+  }
 
   # CHECK VALUES AND DIMENSIONS ------------------------------------------
 
@@ -952,31 +1007,47 @@ misfit <- function(data, items, persons, thresholds){
   # Check if there are any NA in thresholds and if thresholds is ordered
   if (any(is.na(thresholds)) ||
       identical(order(thresholds),
-      seq(1,length(thresholds))) == FALSE){
+                seq(1,length(thresholds))) == FALSE){
     stop('Input "thresholds" must be an ordered vector of real numbers
          with no NA')
   }
 
-  # Check if the length of thresholds equals the maximum minus minimum
-  # rating category in data
-  if (max(data, na.rm = TRUE) - min(data, na.rm = TRUE) !=
-      length(thresholds)){
-    stop('The length of thresholds must equal the maximum minus the
-         minimum rating category in data')
+  # Check if the length of thresholds equals the maximum observed rating
+  # in 'data' minus 0 if 'minRating' is not specified
+  if (is.null(minRating) &&
+      max(data, na.rm = TRUE) - min(data, na.rm = TRUE)
+      != length(thresholds)){
+    stop('The length of "thresholds" must equal the maximum minus
+          minimum rating in "data" unless "minRating" is specified')
+  }
+  # Check if the maximum observed rating is too large given 'minRating'
+  if (!is.null(minRating) &&
+      max(data, na.rm = TRUE) - minRating > length(thresholds)){
+    stop('The maximum rating in "data" cannot be larger than "minRating"
+          plus the length of "thresholds"')
+  }
+  # Check if 'minRating' is too large
+  if (!is.null(minRating) && minRating > min(data, na.rm = TRUE)){
+    stop('"minRating" cannot be larger than the smallest integer in
+         "data"')
   }
 
 
   # INITIALIZE -----------------------------------------------------------
 
-  # Make lowest rating zero
-  rdata = data - min(data, na.rm = TRUE)
+  # Define lowest rating to be zero
+  if (is.null(minRating)){
+    rdata = data - min(data, na.rm = TRUE)
+  } else {
+    rdata = data - minRating
+  }
 
-  # Highest rating category = number of thresholds
-  R_max = max(rdata, na.rm = TRUE)
+  # Define highest rating category = length of thresholds
+  R_max = length(thresholds)
 
-  RV=seq(0,R_max)
-  IF_pN=rep(0, length(persons)); IF_pD = IF_pN; OF_p = IF_pD
-  IF_iN=rep(0, length(items)); IF_iD = IF_iN; OF_i = IF_iD
+  RV = seq(0, R_max)
+  IF_pN = rep(0, length(persons)); IF_pD = IF_pN; OF_p = IF_pD
+  IF_iN = rep(0, length(items)); IF_iD = IF_iN; OF_i = IF_iD
 
   # Loop through all persons and items
   for (pp in seq(1,length(persons))){
@@ -1034,6 +1105,123 @@ misfit <- function(data, items, persons, thresholds){
   out$infit_persons = Infit_P
   out$outfit_items = Outfit_I
   out$outfit_persons = Outfit_P
+
   return(out)
 }
 
+
+
+# Simulated rating scale data
+simdata <- function(items, persons, thresholds, missingProb = 0,
+                    minRating = 0){
+  # Simulated ratings matrix given item measures, person measures and
+  # ordered rating category thresholds.
+
+  # REQUIRED INPUTS
+  # 'items' = a numeric vector of item measures with no NA.
+  # 'persons' = a numeric vector of person measures with no NA.
+  # 'thresholds' = a numeric vector of ordered rating category thresholds
+  #                with no NA.
+
+  # OPTIONAL INPUTS
+  # 'missingProb' = a real number between 0 and 1 specifying the
+  #                 probability of missing data (i.e., NA). Default is 0.
+  # 'minRating' = integer representing the smallest ordinal rating
+  #               category. Default is 0.
+
+  # CHECK FOR MISSING REQUIRED INPUTS ------------------------------------
+
+  if (missing("items")){
+    stop('Argument "items" is missing with no default')
+  }
+  if (missing("persons")){
+    stop('Argument "persons" is missing with no default')
+  }
+  if (missing("thresholds")){
+    stop('Argument "thresholds" is missing with no default')
+  }
+
+  # CHECK DATA STRUCTURES AND DATA TYPES ---------------------------------
+
+  if (!is.vector(items) || typeof(items) != "double"){
+    stop('Argument "items" must be a vector of mode numeric with no NA')
+  }
+  if (!is.vector(persons) || typeof(persons) != "double"){
+    stop('Argument "persons" must be a vector of mode numeric with no NA')
+  }
+  if (!is.vector(thresholds) || typeof(thresholds) != "double"){
+    stop('Argument "thresholds" must be an ordered vector of
+         mode numeric with no NA')
+  }
+  if (length(missingProb) == 1 && typeof(missingProb) == "integer"){
+    missingProb = as.numeric(missingProb)
+  }
+  if (length(missingProb) != 1 || typeof(missingProb) != "double"){
+    stop('Argument "missingProb" must be a real number between 0 and 1')
+  }
+  if (length(minRating) != 1 || typeof(minRating) != "double" ||
+      minRating%%1 != 0){
+    stop('Argument "minRating" must be an integer')
+  }
+  if (length(minRating) == 1 && typeof(minRating) == "integer"){
+    minRating = as.numeric(minRating)
+  }
+
+
+  # CHECK VALUES AND DIMENSIONS ------------------------------------------
+
+  # Check if there are any NA in items
+  if (any(is.na(items))){
+    stop('Argument "items" must be a vector of mode numeric with no NA')
+  }
+  # Check if there are any NA in persons
+  if (any(is.na(items))){
+    stop('Argument "persons" must be a vector of mode numeric with no NA')
+  }
+  # Check if there are any NA in thresholds and if thresholds is ordered
+  if (any(is.na(thresholds)) ||
+      identical(order(thresholds),
+                seq(1, length(thresholds))) == FALSE){
+    stop('Argument "thresholds" must be an ordered vector of real numbers
+         with no NA')
+  }
+  # Check if optional argument 'missing' is less than 0 or greater than 1
+  if (missingProb < 0 || missingProb > 1){
+    stop('Argument "missingData" must be a real number between 0 and 1')
+  }
+
+  # INITIALIZE -----------------------------------------------------------
+
+  # Output matrix with defaults set to NA
+  M = matrix(NA, nrow = length(persons), ncol = length(items))
+
+  # Loop through items and persons to simulate rating
+  for (ii in seq(1, length(items))){
+    for (pp in seq(1, length(persons))){
+
+      # Check if NA
+      if (!is.na(items[ii]) && !is.na(persons[pp])){
+
+        # Probability of observing each rating category
+        prb = msdprob(persons[pp] - items[ii], thresholds)
+
+        # Randomly select rating category (lowest rating = 0)
+        prb2 = c(0, cumsum(prb))
+        M[pp, ii] = findInterval(runif(1), prb2) - 1.0
+
+        # Probability of missing data (probability of NA)
+        if (missingProb > 0){
+          if (runif(1) < missingProb){
+            M[pp, ii] = NA
+          }
+        }
+      }
+    }
+  }
+
+  # Set minimum rating category
+  M = M + minRating
+
+  # Output
+  return(M)
+}

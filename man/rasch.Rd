@@ -37,21 +37,39 @@ Chris Bradley (cbradley05@gmail.com)
 \note{
 The axis origin is set by convention at the mean item measure.  All item measures and person measures that cannot be estimated will return as NA (e.g., if a person responds with a single rating category to all items, that person's person measure cannot be estimated).
 
-\code{rasch} is the basis for the "successive dichotomizations" in \code{msd} and is repeatedly called by \code{msd} when there are multiple rating categories.
+\code{rasch} is the basis for the "successive dichotomizations" in \code{msd} and is repeatedly called by \code{msd} when there are three or more rating categories.
+
+The accuracy of \code{rasch} can be tested using the \code{simdata} function (see Examples).
 }
 \seealso{
 \code{\link{msd}}
+\code{\link{simdata}}
 }
 \examples{
-# Using a randomly generated ratings matrix
+# Simple example using a randomly generated ratings matrix
 d <- as.numeric(sample(0:1, 1000, replace = TRUE))
-m <- matrix(d, nrow = 50, ncol = 20)
-z1 <- rasch(m, misfit = TRUE)
+dm <- matrix(d, nrow = 50, ncol = 20)
+m1 <- rasch(dm, misfit = TRUE)
 
 # Anchor first 10 item measures and first 10 person measures
-im <- z1$item_measures
+im <- m1$item_measures
 im[11:length(im)] <- NA
-pm <- z1$person_measures
+pm <- m1$person_measures
 pm[11:length(pm)] <- NA
-z2 <- rasch(m, items = im, persons = pm, misfit = TRUE)
+m2 <- rasch(dm, items = im, persons = pm, misfit = TRUE)
+
+# To test the accuracy of rasch using simdata, set the true mean item measure to
+# zero (axis origin in rasch is the mean item measure).  Note that the threshold for
+# dichotomous data is at 0.
+im = runif(100, -2, 2)
+im = im - mean(im)
+pm = runif(200, -2, 2)
+th = 0
+d = simdata(im, pm, th, missingProb = 0.15, minRating = 0)
+m = rasch(d)
+
+# Compare rasch parameters to true values.  Linear regression should
+# yield a slope very close to 1 and an intercept very close to 0.
+lm(m$item_measures ~ im)
+lm(m$person_measures ~ pm)
 }
