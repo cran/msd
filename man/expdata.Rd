@@ -28,7 +28,7 @@ A numeric matrix of expected ratings.
 Chris Bradley (cbradley05@gmail.com)
 }
 \note{
-Expected ratings are literally the expected value of the ordinal rating categories when treated as integers.  Expected ratings that cannot be calculated return as NA (e.g., if either the person or item measure is NA).  Intended use is for chi-squared tests or
+Expected ratings are literally the expected value of the ordinal rating categories when treated as integers.  Expected ratings that cannot be calculated return as NA (e.g., if either the person or item measure is NA).  Intended use is for chi-squared tests or for
 calculating infit and outfit statistics.
 }
 \seealso{

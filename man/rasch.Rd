@@ -47,26 +47,26 @@ The accuracy of \code{rasch} can be tested using the \code{simdata} function (se
 }
 \examples{
 # Simple example using a randomly generated ratings matrix
-d <- as.numeric(sample(0:1, 1000, replace = TRUE))
-dm <- matrix(d, nrow = 50, ncol = 20)
+d <- as.numeric(sample(0:1, 200, replace = TRUE))
+dm <- matrix(d, nrow = 20, ncol = 10)
 m1 <- rasch(dm, misfit = TRUE)
 
-# Anchor first 10 item measures and first 10 person measures
+# Anchor first 5 item measures and first 10 person measures
 im <- m1$item_measures
-im[11:length(im)] <- NA
+im[6:length(im)] <- NA
 pm <- m1$person_measures
 pm[11:length(pm)] <- NA
-m2 <- rasch(dm, items = im, persons = pm, misfit = TRUE)
+m2 <- rasch(dm, items = im, persons = pm)
 
 # To test the accuracy of rasch using simdata, set the true mean item measure to
 # zero (axis origin in rasch is the mean item measure).  Note that the threshold for
 # dichotomous data is at 0.
-im = runif(100, -2, 2)
-im = im - mean(im)
-pm = runif(200, -2, 2)
-th = 0
-d = simdata(im, pm, th, missingProb = 0.15, minRating = 0)
-m = rasch(d)
+im <- runif(100, -2, 2)
+im <- im - mean(im)
+pm <- runif(100, -2, 2)
+th <- 0
+d <- simdata(im, pm, th, missingProb = 0.15, minRating = 0)
+m <- rasch(d)
 
 # Compare rasch parameters to true values.  Linear regression should
 # yield a slope very close to 1 and an intercept very close to 0.

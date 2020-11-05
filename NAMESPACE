@@ -1,2 +1,2 @@
 exportPattern("^[[:alpha:]]+")
-importFrom("stats", "optim", "sd", "runif")
+importFrom("stats", "lm", "optim", "sd", "runif")

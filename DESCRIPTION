@@ -1,7 +1,7 @@
 Package: msd
 Type: Package
 Title: Method of Successive Dichotomizations
-Version: 0.2.0
+Version: 0.3.0
 Author: Chris Bradley <cbradley05@gmail.com>
 Maintainer: Chris Bradley <cbradley05@gmail.com>
 Imports: stats
@@ -13,6 +13,6 @@ License: GPL
 Encoding: UTF-8
 LazyData: true
 NeedsCompilation: no
-Packaged: 2020-05-02 13:25:18 UTC; chrisbradley
+Packaged: 2020-11-05 19:49:00 UTC; chrisbradley
 Repository: CRAN
-Date/Publication: 2020-05-02 13:40:02 UTC
+Date/Publication: 2020-11-05 20:20:02 UTC

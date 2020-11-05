@@ -16,7 +16,7 @@ msd(data, items = NULL, persons = NULL, misfit = FALSE)
   \item{misfit}{logical for calculating infit and outfit statistics.  Default is FALSE.}
 }
 \details{
-\code{items} and \code{persons} are optional numeric vectors that specify item and person measures that should be "anchored" and not estimated.  The length of \code{items} must equal the number of columns in \code{data} and the length of \code{persons} must equal the number of rows in \code{data}.  Only entries set to NA in \code{items} and \code{persons} are estimated.  Default for both \code{items} and \code{persons} is NULL, which is equivalent to a vector of NA so that all items and persons are estimated.
+\code{items} and \code{persons} are optional numeric vectors that specify item and person measures that are "anchored" and not estimated.  The length of \code{items} must equal the number of columns in \code{data} and the length of \code{persons} must equal the number of rows in \code{data}.  Only entries set to NA in \code{items} and \code{persons} are estimated.  Default for both \code{items} and \code{persons} is NULL, which is equivalent to a vector of NA so that all items and persons are estimated.
 }
 \value{
 A list whose elements are:
@@ -40,7 +40,7 @@ Bradley, C. and Massof, R. W. (2018) Method of successive dichotomizations: An i
 Chris Bradley (cbradley05@gmail.com)
 }
 \note{
-The axis origin is set by convention at the mean item measure.  All item measures and person measures that cannot be estimated will return as NA (e.g., if a person responds with a single rating category to all items, that person's person measure cannot be estimated).
+The axis origin is set by convention at the mean item measure.  All item measures and person measures that cannot be estimated will return as NA (e.g., if a person responds with only the highest rating category, or with only the lowest rating category, to all items, that person's person measure cannot be estimated).
 
 The accuracy of \code{msd} can be tested using the \code{simdata} function (see Examples).
 }
@@ -49,27 +49,27 @@ The accuracy of \code{msd} can be tested using the \code{simdata} function (see 
 }
 \examples{
 # Simple example using a randomly generated ratings matrix
-d <- as.numeric(sample(0:5, 1000, replace = TRUE))
-dm <- matrix(d, nrow = 50, ncol = 20)
+d <- as.numeric(sample(0:5, 200, replace = TRUE))
+dm <- matrix(d, nrow = 20, ncol = 10)
 m1 <- msd(dm, misfit = TRUE)
 
-# Anchor first 10 item measures and first 10 person measures
+# Anchor first 5 item measures and first 10 person measures
 im <- m1$item_measures
-im[11:length(im)] <- NA
+im[6:length(im)] <- NA
 pm <- m1$person_measures
 pm[11:length(pm)] <- NA
-m2 <- msd(dm, items = im, persons = pm, misfit = TRUE)
+m2 <- msd(dm, items = im, persons = pm)
 
 # To test the accuracy of msd using simdata, set the mean item measure to zero
 # (axis origin in msd is the mean item measure) and the mean threshold to
 # zero (any non-zero mean threshold is reflected in the person measures).
-im = runif(100, -2, 2)
-im = im - mean(im)
-pm = runif(200, -2, 2)
-th = sort(runif(5, -2, 2))
-th = th - mean(th)
-d = simdata(im, pm, th, missingProb = 0.15, minRating = 0)
-m = msd(d)
+im <- runif(100, -2, 2)
+im <- im - mean(im)
+pm <- runif(100, -2, 2)
+th <- sort(runif(5, -2, 2))
+th <- th - mean(th)
+d <- simdata(im, pm, th, missingProb = 0.15, minRating = 0)
+m <- msd(d)
 
 # Compare msd parameters to true values.  Linear regression should
 # yield a slope very close to 1 and an intercept very close to 0.

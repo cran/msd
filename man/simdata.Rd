@@ -38,23 +38,18 @@ Chris Bradley (cbradley05@gmail.com)
 \code{\link{msd}}
 }
 \examples{
-# Using randomly generated item measures, person measures and thresholds with
-# 15 percent missing data and ordinal rating categories from 0 to 5
-im = runif(100, -2, 2)
-pm = runif(200, -2, 2)
-th = sort(runif(5, -2, 2))
-d1 = simdata(im, pm, th, missingProb = 0.15, minRating = 0)
-
-# To test the accuracy of msd using simdata, set the mean item measure to zero
-# (axis origin in msd is the mean item measure) and the mean threshold to
-# zero (any non-zero mean threshold is reflected in the person measures).
-im = runif(100, -2, 2)
-im = im - mean(im)
-pm = runif(200, -2, 2)
-th = sort(runif(5, -2, 2))
-th = th - mean(th)
-d2 = simdata(im, pm, th, missingProb = 0.15, minRating = 0)
-m = msd(d2)
+# Use simdata to test the accuracy of msd. First, randomly generate item 
+# measures, person measures and thresholds with 15 percent missing data and 
+# ordinal rating categories from 0 to 5. Then, set mean item measure to zero 
+# (axis origin in msd is the mean item measure) and mean threshold to zero 
+# (any non-zero mean threshold is reflected in the person measures).
+im <- runif(100, -2, 2)
+pm <- runif(100, -2, 2)
+th <- sort(runif(5, -2, 2))
+im <- im - mean(im)
+th <- th - mean(th)
+d <- simdata(im, pm, th, missingProb = 0.15, minRating = 0)
+m <- msd(d)
 
 # Compare msd parameters to true values.  Linear regression should
 # yield a slope very close to 1 and an intercept very close to 0.

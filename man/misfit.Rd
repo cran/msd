@@ -5,7 +5,7 @@
 Infit and Outfit Statistics
 }
 \description{
-Calculates infit and outfit for items and persons.
+Calculates infit and outfit statistics for items and persons.
 }
 \usage{
 misfit(data, items, persons, thresholds, minRating = NULL)
@@ -34,9 +34,9 @@ Chris Bradley (cbradley05@gmail.com)
 }
 \examples{
 # Using randomly generated values
-d <- as.numeric(sample(0:5, 1000, replace = TRUE))
-dm <- matrix(d, nrow = 50, ncol = 20)
-im <- runif(20, -2, 2)
+d <- as.numeric(sample(0:5, 500, replace = TRUE))
+dm <- matrix(d, nrow = 50, ncol = 10)
+im <- runif(10, -2, 2)
 pm <- runif(50, -2, 2)
 th <- sort(runif(5, -2, 2))
 m <- misfit(data = dm, items = im, persons = pm, thresholds = th)
