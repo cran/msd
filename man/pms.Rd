@@ -38,8 +38,8 @@ Person measures estimated with \code{pms} differ from those estimated with \code
 }
 \examples{
 # Simple example with randomly generated values and lowest rating category = 0
-d <- as.numeric(sample(0:4, 1000, replace = TRUE))
-dm <- matrix(d, nrow = 50, ncol = 20)
+d <- as.numeric(sample(0:4, 500, replace = TRUE))
+dm <- matrix(d, nrow = 25, ncol = 20)
 im <- runif(20, -2, 2)
 th <- sort(runif(4, -2, 2))
 pm <- pms(data = dm, items = im, thresholds = th, misfit = TRUE, minRating = 0)

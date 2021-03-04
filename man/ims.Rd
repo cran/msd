@@ -38,8 +38,8 @@ Item measures estimated with \code{ims} differ from those estimated with \code{m
 }
 \examples{
 # Simple example with randomly generated values and lowest rating category = 0.
-d <- as.numeric(sample(0:4, 1000, replace = TRUE))
-dm <- matrix(d, nrow = 50, ncol = 20)
+d <- as.numeric(sample(0:4, 500, replace = TRUE))
+dm <- matrix(d, nrow = 50, ncol = 10)
 pm <- runif(50, -2, 2)
 th <- sort(runif(4, -2, 2))
 im <- ims(data = dm, persons = pm, thresholds = th, misfit = TRUE, minRating = 0)

@@ -1,4 +1,9 @@
 
+Version 0.3.1
+=============
+
+Modified the msd function to estimate parameters even when at least one dichotomization produces no parameter estimates. A dichotomization will produce no parameter estimates if an extreme rating category is never used (or rarely used). Previously, msd would not run unless all dichotomizations produced valid parameter estimates. 
+
 Version 0.3.0
 =============
 
